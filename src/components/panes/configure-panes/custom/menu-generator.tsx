@@ -18,9 +18,13 @@ import type {
   VIASubmenuSlice,
   VIAItem,
   VIAItemSlice,
+  LayoutLabel,
 } from '@the-via/reader';
 import {useAppDispatch, useAppSelector} from 'src/store/hooks';
-import {getSelectedDefinition} from 'src/store/definitionsSlice';
+import {
+  getSelectedDefinition,
+  getSelectedLayoutOptions,
+} from 'src/store/definitionsSlice';
 import {
   getSelectedCustomMenuData,
   updateCustomMenuValue,
@@ -72,7 +76,7 @@ function itemGenerator(
 ): any {
   if (
     'showIf' in elem &&
-    !evalExpr(elem.showIf as string, props.selectedCustomMenuData)
+    !evalExpr(elem.showIf as string, {...props.selectedCustomMenuData, ...props.viaMenuData})
   ) {
     return [];
   }
@@ -108,7 +112,7 @@ function submenuGenerator(
 ): any {
   if (
     'showIf' in elem &&
-    !evalExpr(elem.showIf as string, props.selectedCustomMenuData)
+    !evalExpr(elem.showIf as string, {...props.selectedCustomMenuData, ...props.viaMenuData})
   ) {
     return [];
   }
@@ -134,18 +138,37 @@ export const Pane: React.FC<Props> = (props: any) => {
 
   const selectedDefinition = useAppSelector(getSelectedDefinition);
   const selectedCustomMenuData = useAppSelector(getSelectedCustomMenuData);
+  const selectedLayoutOptions = useAppSelector(getSelectedLayoutOptions);
+
+  if (
+    !selectedDefinition ||
+    !selectedCustomMenuData ||
+    !selectedLayoutOptions
+  ) {
+    return null;
+  }
+
+  const {layouts} = selectedDefinition;
+  const layoutOptions =
+    layouts.labels?.map((label: LayoutLabel, idx: number) => {
+      let labelTitle: string;
+      if (Array.isArray(label)) {
+        labelTitle = label[0];
+      } else {
+        labelTitle = label;
+      }
+      const labelValue: number = selectedLayoutOptions[idx];
+      return labelValue;
+    }) || [];
 
   const childProps = {
     ...props,
     selectedDefinition,
     selectedCustomMenuData,
+    viaMenuData: {via_layout_options: layoutOptions},
     updateCustomMenuValue: (command: string, ...rest: number[]) =>
       dispatch(updateCustomMenuValue(command, ...rest)),
   };
-
-  if (!selectedDefinition || !selectedCustomMenuData) {
-    return null;
-  }
 
   return (
     <>
